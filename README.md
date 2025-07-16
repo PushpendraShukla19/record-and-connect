@@ -1,73 +1,53 @@
-# Welcome to your Lovable project
+# 🖥️ Record and Connect
 
-## Project info
+A web-based screen recording application with integrated audio call functionality. Capture your screen and microphone, preview your recordings, and seamlessly initiate audio calls—all in one intuitive interface.
 
-**URL**: https://lovable.dev/projects/9ef184b6-8d89-4315-b4b0-31c98abe745d
+## 🌐 Live Preview
 
-## How can I edit this code?
+👉 [Click here to open the live app](https://record-and-connect.vercel.app/)
 
-There are several ways of editing your application.
+![App Screenshot](record-and-connect.png)  
+*Recording interface preview*
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9ef184b6-8d89-4315-b4b0-31c98abe745d) and start prompting.
+## 🚀 Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🎥 **Screen Recording**: Record full screen, window, or tab with optional audio.
+- 🎙️ **Microphone Support**: Choose and test mic input before recording.
+- 🧩 **Pause / Resume / Stop** controls with real-time status.
+- 🔊 **Audio Calling**: Peer-to-peer audio calls between users.
+- 💾 **Preview & Download**: Review the recording and download as WebM.
+- 🧠 **Smart UI**: Minimal, intuitive, responsive design.
 
-**Use your preferred IDE**
+## 🧰 Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend**: React + Vite (or Next.js if applicable)
+- **Media APIs**: `getDisplayMedia()`, `MediaRecorder`, and WebRTC
+- **Deployment**: Hosted on [Vercel](https://vercel.com/)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
+## 🎙️ Permissions & Fallbacks
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+* The app requests browser permissions to capture screen + microphone.
+* If `getDisplayMedia()` is blocked (e.g. in an iframe), a simulated “demo mode” runs with mock UI & timers.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🧪 Testing
 
-# Step 3: Install the necessary dependencies.
-npm i
+* Test mic audio before recording — you’ll see visualization feedback.
+* Ensure pause/resume functionality persists recorded content correctly.
+* Validate file download works across browsers and formats.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### 🔍 Tips & Notes
 
-**Edit a file directly in GitHub**
+* Ensure browser compatibility for `getDisplayMedia()` and MediaRecorder.
+* For audio calls, consider using a peer-to-peer solution like WebRTC (simplest) or third-party platforms (e.g., Twilio).
+* Add session persistence (downloads, recordings, or call data) using IndexedDB or localStorage if needed.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 👤 Author
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**Pushpendra Kumar Shukla**
+[Portfolio](https://pushpendrashukla19.github.io/pushpendrashukla/) · [LinkedIn](https://linkedin.com/in/pushpendrakumarshukla) · [GitHub](https://github.com/PushpendraShukla19)
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/9ef184b6-8d89-4315-b4b0-31c98abe745d) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
