@@ -520,6 +520,47 @@ Generated automatically from recording transcript.`;
                 Download Recording
               </Button>
             )}
+            
+            {/* Manual Download Buttons - Always visible for testing */}
+            <div className="space-y-2 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  if (recordingState.transcript) {
+                    downloadTranscript();
+                  } else {
+                    toast({
+                      title: "No Transcript Available",
+                      description: "Record a video first to generate a transcript",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                className="w-full"
+              >
+                <FileText className="h-4 w-4" />
+                Download Transcript
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  if (recordingState.meetingPoints.length > 0) {
+                    downloadMeetingMinutes();
+                  } else {
+                    toast({
+                      title: "No Meeting Minutes Available", 
+                      description: "Record a video first to generate meeting minutes",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                className="w-full"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Download Meeting Minutes
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
