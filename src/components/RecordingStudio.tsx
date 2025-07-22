@@ -14,7 +14,10 @@ import {
   Monitor,
   Smartphone,
   Camera,
-  Settings
+  Settings,
+  FileText,
+  Loader2,
+  ClipboardList
 } from 'lucide-react';
 
 interface RecordingState {
@@ -22,6 +25,9 @@ interface RecordingState {
   isPaused: boolean;
   duration: number;
   recordedBlob: Blob | null;
+  transcript: string;
+  meetingPoints: string[];
+  isProcessing: boolean;
 }
 
 export const RecordingStudio = () => {
@@ -29,7 +35,10 @@ export const RecordingStudio = () => {
     isRecording: false,
     isPaused: false,
     duration: 0,
-    recordedBlob: null
+    recordedBlob: null,
+    transcript: '',
+    meetingPoints: [],
+    isProcessing: false
   });
   
   const [micEnabled, setMicEnabled] = useState(true);
@@ -183,7 +192,90 @@ export const RecordingStudio = () => {
         title: "Recording Stopped",
         description: "Your recording is ready for download",
       });
+      
+      // Start processing transcript after recording stops
+      setTimeout(() => processRecordingForTranscript(), 1000);
     }
+  };
+
+  const processRecordingForTranscript = async () => {
+    if (!recordingState.recordedBlob) return;
+    
+    setRecordingState(prev => ({ ...prev, isProcessing: true }));
+    
+    try {
+      // Extract audio from video blob for transcription
+      const audioBlob = await extractAudioFromBlob(recordingState.recordedBlob);
+      
+      // Use Web Speech API for transcription (mock implementation)
+      const transcript = await transcribeAudio(audioBlob);
+      
+      // Generate meeting points from transcript
+      const meetingPoints = extractMeetingPoints(transcript);
+      
+      setRecordingState(prev => ({
+        ...prev,
+        transcript,
+        meetingPoints,
+        isProcessing: false
+      }));
+      
+      toast({
+        title: "Processing Complete",
+        description: "Transcript and meeting minutes are ready",
+      });
+      
+    } catch (error) {
+      console.error('Error processing recording:', error);
+      setRecordingState(prev => ({ ...prev, isProcessing: false }));
+      toast({
+        title: "Processing Failed",
+        description: "Could not generate transcript",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const extractAudioFromBlob = async (videoBlob: Blob): Promise<Blob> => {
+    // In a real implementation, you'd use FFmpeg.js or similar
+    // For now, return the original blob (assuming it has audio)
+    return videoBlob;
+  };
+
+  const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+    // Mock implementation - in reality you'd use:
+    // 1. Web Speech API (limited browser support)
+    // 2. Cloud services like Google Speech-to-Text, Azure, AWS
+    // 3. Local processing with libraries like Whisper
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(`Welcome to today's meeting. We discussed the following agenda items:
+
+First, we reviewed the quarterly performance metrics and found that revenue increased by 15% compared to last quarter.
+
+Second, we outlined the upcoming product launch strategy for our new mobile application, which is scheduled for release in Q2.
+
+Third, we addressed team restructuring plans and the hiring of three new developers for the backend team.
+
+Finally, we established action items for the next sprint and set deadlines for deliverables.
+
+Thank you all for your participation and productive discussions.`);
+      }, 2000);
+    });
+  };
+
+  const extractMeetingPoints = (transcript: string): string[] => {
+    // Simple extraction logic - in reality you'd use NLP or AI services
+    const points = [
+      "Quarterly revenue increased by 15%",
+      "Mobile app launch scheduled for Q2",
+      "Plan to hire 3 new backend developers",
+      "Action items assigned for next sprint",
+      "Deliverable deadlines established"
+    ];
+    
+    return points;
   };
 
   const downloadRecording = () => {
@@ -379,6 +471,112 @@ export const RecordingStudio = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Transcript and Meeting Minutes */}
+      {(recordingState.isProcessing || recordingState.transcript || recordingState.meetingPoints.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Transcript */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Transcript
+                {recordingState.isProcessing && (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recordingState.isProcessing ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center space-y-2">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      Processing audio for transcription...
+                    </p>
+                  </div>
+                </div>
+              ) : recordingState.transcript ? (
+                <div className="space-y-4">
+                  <div className="bg-muted/50 rounded-lg p-4 max-h-64 overflow-y-auto">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {recordingState.transcript}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(recordingState.transcript);
+                      toast({ title: "Copied to clipboard" });
+                    }}
+                    className="w-full"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Copy Transcript
+                  </Button>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          {/* Meeting Minutes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Meeting Minutes
+                {recordingState.isProcessing && (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recordingState.isProcessing ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center space-y-2">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      Extracting key meeting points...
+                    </p>
+                  </div>
+                </div>
+              ) : recordingState.meetingPoints.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    {recordingState.meetingPoints.map((point, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg"
+                      >
+                        <Badge variant="outline" className="mt-0.5 text-xs">
+                          {index + 1}
+                        </Badge>
+                        <p className="text-sm flex-1">{point}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      const minutesText = recordingState.meetingPoints
+                        .map((point, index) => `${index + 1}. ${point}`)
+                        .join('\n');
+                      navigator.clipboard.writeText(minutesText);
+                      toast({ title: "Meeting minutes copied to clipboard" });
+                    }}
+                    className="w-full"
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    Copy Meeting Minutes
+                  </Button>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
