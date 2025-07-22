@@ -278,6 +278,58 @@ Thank you all for your participation and productive discussions.`);
     return points;
   };
 
+  const downloadTranscript = () => {
+    if (!recordingState.transcript) return;
+    
+    const content = `Meeting Transcript
+Generated on: ${new Date().toLocaleString()}
+
+${recordingState.transcript}`;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transcript-${new Date().toISOString().slice(0, 19)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Download Started",
+      description: "Transcript file is being downloaded",
+    });
+  };
+
+  const downloadMeetingMinutes = () => {
+    if (!recordingState.meetingPoints.length) return;
+    
+    const content = `Meeting Minutes
+Generated on: ${new Date().toLocaleString()}
+
+Key Discussion Points:
+${recordingState.meetingPoints.map((point, index) => `${index + 1}. ${point}`).join('\n')}
+
+---
+Generated automatically from recording transcript.`;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `meeting-minutes-${new Date().toISOString().slice(0, 19)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Download Started",
+      description: "Meeting minutes file is being downloaded",
+    });
+  };
+
   const downloadRecording = () => {
     if (recordingState.recordedBlob) {
       const url = URL.createObjectURL(recordingState.recordedBlob);
@@ -503,18 +555,29 @@ Thank you all for your participation and productive discussions.`);
                       {recordingState.transcript}
                     </p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      navigator.clipboard.writeText(recordingState.transcript);
-                      toast({ title: "Copied to clipboard" });
-                    }}
-                    className="w-full"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Copy Transcript
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        navigator.clipboard.writeText(recordingState.transcript);
+                        toast({ title: "Copied to clipboard" });
+                      }}
+                      className="flex-1"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Copy Transcript
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={downloadTranscript}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </CardContent>
@@ -556,21 +619,32 @@ Thank you all for your participation and productive discussions.`);
                       </div>
                     ))}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      const minutesText = recordingState.meetingPoints
-                        .map((point, index) => `${index + 1}. ${point}`)
-                        .join('\n');
-                      navigator.clipboard.writeText(minutesText);
-                      toast({ title: "Meeting minutes copied to clipboard" });
-                    }}
-                    className="w-full"
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                    Copy Meeting Minutes
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const minutesText = recordingState.meetingPoints
+                          .map((point, index) => `${index + 1}. ${point}`)
+                          .join('\n');
+                        navigator.clipboard.writeText(minutesText);
+                        toast({ title: "Meeting minutes copied to clipboard" });
+                      }}
+                      className="flex-1"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Copy Minutes
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={downloadMeetingMinutes}
+                      className="flex-1"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </CardContent>
