@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { 
   Video, 
   Mic, 
@@ -27,11 +25,9 @@ interface RecordingState {
   isPaused: boolean;
   duration: number;
   recordedBlob: Blob | null;
-  processedBlob: Blob | null;
   transcript: string;
   meetingPoints: string[];
   isProcessing: boolean;
-  isVideoProcessing: boolean;
 }
 
 export const RecordingStudio = () => {
@@ -40,11 +36,9 @@ export const RecordingStudio = () => {
     isPaused: false,
     duration: 0,
     recordedBlob: null,
-    processedBlob: null,
     transcript: '',
     meetingPoints: [],
-    isProcessing: false,
-    isVideoProcessing: false
+    isProcessing: false
   });
   
   const [micEnabled, setMicEnabled] = useState(true);
@@ -54,7 +48,6 @@ export const RecordingStudio = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const ffmpegRef = useRef<FFmpeg | null>(null);
   
   const { toast } = useToast();
 
@@ -134,7 +127,7 @@ export const RecordingStudio = () => {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-        setRecordingState(prev => ({ ...prev, recordedBlob: blob, processedBlob: null }));
+        setRecordingState(prev => ({ ...prev, recordedBlob: blob }));
         
         // Clean up stream
         if (streamRef.current) {
@@ -409,104 +402,9 @@ Generated automatically from recording transcript.`;
       });
   };
 
-  const downloadRecording = async () => {
+  const downloadRecording = () => {
     if (recordingState.recordedBlob) {
-      // Process video with FFmpeg first to ensure seekability
-      if (!recordingState.processedBlob) {
-        await processVideoWithFFmpeg(recordingState.recordedBlob);
-        return; // Function will call downloadRecording again after processing
-      }
-      
-      const url = URL.createObjectURL(recordingState.processedBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `recording-${new Date().toISOString().slice(0, 19)}.mp4`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Download Started",
-        description: "Your seekable MP4 recording is being downloaded",
-      });
-    }
-  };
-
-  const initializeFFmpeg = async (): Promise<FFmpeg> => {
-    if (ffmpegRef.current) {
-      return ffmpegRef.current;
-    }
-
-    const ffmpeg = new FFmpeg();
-    
-    try {
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
-      
-      ffmpegRef.current = ffmpeg;
-      return ffmpeg;
-    } catch (error) {
-      console.error('Failed to initialize FFmpeg:', error);
-      throw error;
-    }
-  };
-
-  const processVideoWithFFmpeg = async (inputBlob: Blob) => {
-    setRecordingState(prev => ({ ...prev, isVideoProcessing: true }));
-    
-    try {
-      const ffmpeg = await initializeFFmpeg();
-      
-      // Write input file
-      await ffmpeg.writeFile('input.webm', await fetchFile(inputBlob));
-      
-      // Process with FFmpeg to create seekable MP4 with proper metadata
-      await ffmpeg.exec([
-        '-i', 'input.webm',
-        '-c:v', 'libx264',        // H.264 codec for better compatibility
-        '-preset', 'medium',       // Balance between speed and compression
-        '-crf', '23',             // Good quality setting
-        '-c:a', 'aac',            // AAC audio codec
-        '-b:a', '128k',           // Audio bitrate
-        '-movflags', '+faststart', // Move metadata to beginning for web streaming
-        '-fflags', '+genpts',     // Generate presentation timestamps
-        '-avoid_negative_ts', 'make_zero', // Handle timestamp issues
-        '-r', '30',               // Set frame rate for consistent playback
-        'output.mp4'
-      ]);
-      
-      // Read the processed file
-      const data = await ffmpeg.readFile('output.mp4');
-      const processedBlob = new Blob([data], { type: 'video/mp4' });
-      
-      // Clean up temporary files
-      await ffmpeg.deleteFile('input.webm');
-      await ffmpeg.deleteFile('output.mp4');
-      
-      setRecordingState(prev => ({ 
-        ...prev, 
-        processedBlob,
-        isVideoProcessing: false 
-      }));
-      
-      toast({
-        title: "Video Processing Complete",
-        description: "Your recording is now optimized for all media players",
-      });
-      
-      // Automatically start download after processing
-      downloadRecording();
-      
-    } catch (error) {
-      console.error('Error processing video:', error);
-      setRecordingState(prev => ({ ...prev, isVideoProcessing: false }));
-      
-      // Fallback to original blob if processing fails
-      const url = URL.createObjectURL(inputBlob);
+      const url = URL.createObjectURL(recordingState.recordedBlob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `recording-${new Date().toISOString().slice(0, 19)}.webm`;
@@ -516,9 +414,8 @@ Generated automatically from recording transcript.`;
       URL.revokeObjectURL(url);
       
       toast({
-        title: "Processing Failed",
-        description: "Downloaded original WebM file instead",
-        variant: "destructive"
+        title: "Download Started",
+        description: "Your recording is being downloaded",
       });
     }
   };
@@ -689,20 +586,10 @@ Generated automatically from recording transcript.`;
               <Button 
                 variant="success" 
                 onClick={downloadRecording}
-                disabled={recordingState.isVideoProcessing}
                 className="w-full"
               >
-                {recordingState.isVideoProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing Video...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4" />
-                    Download MP4 Recording
-                  </>
-                )}
+                <Download className="h-4 w-4" />
+                Download Recording
               </Button>
             )}
           </CardContent>
